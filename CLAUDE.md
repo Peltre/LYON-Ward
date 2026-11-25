@@ -18,9 +18,10 @@ Página de fans (no oficial) que sigue a LYON, equipo de League of Legends en la
 
 Verifica siempre el estado real del repo: esta lista puede estar atrasada.
 
-- Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`, `internal/lolesports/client.go`, `internal/lolesports/client_test.go` (las pruebas pasan).
-- En curso: `internal/tracker/snapshot.go` y `snapshot_test.go`. Ya me explicaron el código; revisa si ya existen en el repo.
-- Sigue, en orden: `internal/tracker/store.go`, `internal/tracker/sync.go`, `internal/web/server.go` con sus templates y CSS, `main.go` (reemplaza el hola mundo), `README.md` y `.gitignore`.
+- Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`.
+- Los demás archivos existen pero solo tienen su comentario y la cláusula `package`: están vacíos de lógica. `go build`, `go vet` y `go test` pasan, pero todavía no hay ninguna prueba.
+- El template se llama `matches.html`, no `partidos.html`: los nombres de archivo van en inglés y solo el modelo propio va en español.
+- Sigue, en orden: `internal/lolesports/client.go` y `client_test.go`, `internal/tracker/snapshot.go` y `snapshot_test.go`, `internal/tracker/store.go`, `internal/tracker/sync.go`, `internal/web/server.go` con sus templates y CSS, `main.go` (reemplaza el hola mundo), `README.md` y `.gitignore`.
 
 ## Arquitectura (fase 1)
 
