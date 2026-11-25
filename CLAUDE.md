@@ -18,10 +18,12 @@ Página de fans (no oficial) que sigue a LYON, equipo de League of Legends en la
 
 Verifica siempre el estado real del repo: esta lista puede estar atrasada.
 
-- Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`.
-- Los demás archivos existen pero solo tienen su comentario y la cláusula `package`: están vacíos de lógica. `go build`, `go vet` y `go test` pasan, pero todavía no hay ninguna prueba.
+- Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`, `internal/lolesports/client.go` y `client_test.go` (4 pruebas, todas pasan).
+- Los demás archivos existen pero solo tienen su comentario y la cláusula `package`: están vacíos de lógica.
 - El template se llama `matches.html`, no `partidos.html`: los nombres de archivo van en inglés y solo el modelo propio va en español.
-- Sigue, en orden: `internal/lolesports/client.go` y `client_test.go`, `internal/tracker/snapshot.go` y `snapshot_test.go`, `internal/tracker/store.go`, `internal/tracker/sync.go`, `internal/web/server.go` con sus templates y CSS, `main.go` (reemplaza el hola mundo), `README.md` y `.gitignore`.
+- Sigue, en orden: `internal/tracker/snapshot.go` y `snapshot_test.go`, `internal/tracker/store.go`, `internal/tracker/sync.go`, `internal/web/server.go` con sus templates y CSS, `main.go` (reemplaza el hola mundo), `README.md` y `.gitignore`.
+
+Windows bloquea el binario que `go test` crea en `%TEMP%` (Smart App Control: "An Application Control policy has blocked this file"). Se arregla una vez por computadora con `go env -w GOTMPDIR=C:\Users\dakke\go\tmp`.
 
 ## Arquitectura (fase 1)
 
