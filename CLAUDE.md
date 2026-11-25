@@ -1,0 +1,202 @@
+# LYON Ward
+
+Página de fans (no oficial) que sigue a LYON, equipo de League of Legends en la LCS: próximos partidos, partidos en vivo, resultados, cuentas de soloQ de los jugadores y estadísticas. Backend en Go, HTML renderizado en el servidor con `html/template` y htmx.
+
+## Cómo trabajar conmigo (léelo primero)
+
+- Es mi primer proyecto en Go. El objetivo es doble: construir la página y aprender Go. Prioriza que yo entienda sobre terminar rápido.
+- Responde siempre en español.
+- Vamos archivo por archivo, en el orden de la hoja de ruta. Antes de escribir un archivo, explica qué hace y qué conceptos de Go nuevos aparecen. Después, explica las partes importantes del código.
+- No crees ni modifiques varios archivos de golpe salvo que te lo pida. No refactorices archivos ya terminados sin preguntarme.
+- Después de cada archivo corre `go build ./...`, `go vet ./...` y `go test ./...`.
+- Usa solo la librería estándar. Pregúntame antes de agregar cualquier dependencia con `go get`.
+- Mi entorno: Windows, PowerShell y VS Code. La carpeta local se llama `LYON Ward` (con espacio), así que pon comillas en las rutas. Trabajo desde dos computadoras: recuérdame `git pull` al empezar y `git push` al terminar.
+- `go test -race` en Windows necesita un compilador de C (cgo). Si no está instalado, usa `go test ./...`.
+- Cuando terminemos un archivo, actualiza la sección "Estado actual" de este documento.
+
+## Estado actual
+
+Verifica siempre el estado real del repo: esta lista puede estar atrasada.
+
+- Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`, `internal/lolesports/client.go`, `internal/lolesports/client_test.go` (las pruebas pasan).
+- En curso: `internal/tracker/snapshot.go` y `snapshot_test.go`. Ya me explicaron el código; revisa si ya existen en el repo.
+- Sigue, en orden: `internal/tracker/store.go`, `internal/tracker/sync.go`, `internal/web/server.go` con sus templates y CSS, `main.go` (reemplaza el hola mundo), `README.md` y `.gitignore`.
+
+## Arquitectura (fase 1)
+
+Un sincronizador corre en una goroutine, consulta la API de lolesports cada cierto tiempo y guarda un `Snapshot` en memoria. El servidor web solo lee ese `Snapshot`. El navegador nunca llama a APIs externas, y una visita nunca gasta límites de ninguna API.
+
+Dependencias entre paquetes, siempre en un solo sentido (Go prohíbe ciclos):
+- `main` importa `web`, `tracker` y `lolesports`.
+- `web` importa `tracker`.
+- `tracker` importa `lolesports`.
+- `lolesports` no sabe que existe LYON; `tracker` no sabe nada de HTML; `web` nunca llama a la API.
+
+```
+LYON Ward/
+├── go.mod
+├── main.go                 # arranque, configuración por env y apagado limpio
+├── CLAUDE.md
+├── README.md
+├── .gitignore
+└── internal/
+    ├── lolesports/         # cliente HTTP y tipos que reflejan el JSON de la API
+    │   ├── types.go
+    │   ├── client.go
+    │   └── client_test.go
+    ├── tracker/            # lógica de LYON: modelo Partido, store y sincronizador
+    │   ├── snapshot.go
+    │   ├── snapshot_test.go
+    │   ├── store.go
+    │   └── sync.go
+    └── web/                # rutas, templates y CSS embebidos en el binario
+        ├── server.go
+        ├── templates/
+        │   ├── index.html
+        │   └── partidos.html
+        └── static/
+            └── styles.css
+```
+
+## Contrato de lo que falta
+
+Respeta estos nombres para que todo encaje con lo que ya existe.
+
+**`internal/tracker/store.go`**
+- `type Store struct { mu sync.RWMutex; snap Snapshot }` y `NewStore() *Store`.
+- `Get() Snapshot` con `RLock`, `Set(Snapshot)` con `Lock`.
+- `SetError(msg string)` conserva los últimos datos buenos y solo anota el error.
+- Un `Snapshot` nunca se modifica después de guardarlo: siempre se crea uno nuevo.
+
+**`internal/tracker/sync.go`**
+- `type Syncer struct` con campos `Client *lolesports.Client`, `Store *Store`, `Log *slog.Logger`, `TeamCode string`, `LeagueSlugs []string`, `OlderPages int`, `Interval time.Duration`, `LiveEvery time.Duration` y el privado `leagueIDs map[string]string`.
+- `Run(ctx)`: bucle que llama a `syncOnce` y espera con `select` entre `ctx.Done()` y `time.After(next)`.
+- `syncOnce(ctx) time.Duration`:
+  - Usa un timeout de 45 s.
+  - La primera vez resuelve los IDs con `LeagueIDsBySlug` y avisa en el log qué slugs no existen.
+  - Llama a `fetchAll` y luego a `BuildSnapshot`.
+  - Si no encuentra al equipo, loguea `TeamCodes(events)` para depurar.
+  - Devuelve `LiveEvery` si hay partido en vivo y `Interval` si no. Si hay error, usa `Store.SetError` y reintenta en 1 minuto.
+- `fetchAll`: una goroutine por liga con `sync.WaitGroup`. Cada goroutine escribe en su propio índice de un slice de resultados, sin mutex. Los errores parciales se juntan con `errors.Join`.
+- `fetchLeague`: la página actual más `OlderPages` páginas anteriores, siguiendo `Pages.Older`.
+
+**`internal/web/server.go`**
+- Usa `//go:embed templates/*.html static/*`.
+- `New(store, log) (*Server, error)` con un FuncMap que tenga:
+  - `iso`: fecha en UTC con formato RFC3339.
+  - `fechaUTC`: texto de respaldo si el JavaScript no corre.
+  - `plural(n, uno, varios)`.
+- `Handler()` usa el `ServeMux` estándar con estas rutas:
+  - `GET /{$}` pinta el template `index`.
+  - `GET /partials/partidos` pinta el template `partidos`.
+  - `GET /static/` sirve archivos con `http.FileServerFS`.
+  - `GET /healthz` responde que el servidor está vivo.
+- Renderiza a un `bytes.Buffer` antes de escribir la respuesta.
+
+**Templates**
+- `index.html` define `index`: el layout completo, con `<main hx-get="/partials/partidos" hx-trigger="every 60s" hx-swap="innerHTML">`.
+  - Carga htmx 2.0.4 desde unpkg.
+  - Un script pequeño convierte los `<time datetime data-local="largo|corto|hora">` a la hora local del visitante con `toLocaleString("es-MX")`, y se vuelve a correr en `htmx:afterSwap`.
+- `partidos.html` define `partidos`, con estas secciones:
+  - En vivo.
+  - Siguiente partido, usando `.Proximo`.
+  - Después.
+  - Resultados, con el récord.
+  - Estado: error o última actualización.
+- El footer lleva el aviso legal de Riot (obligatorio).
+
+**`main.go`**
+- Usa `slog` para los logs.
+- `signal.NotifyContext` captura Ctrl+C y SIGTERM.
+- Lanza `go syncer.Run(ctx)`.
+- Crea un `http.Server` con `ReadHeaderTimeout`.
+- Apaga limpio con `srv.Shutdown` y un tiempo máximo de 5 s.
+
+**Variables de entorno**
+
+| Variable | Default | Para qué |
+|---|---|---|
+| `PORT` | `8080` | Puerto del servidor |
+| `TEAM_CODE` | `LYON` | Código o nombre del equipo |
+| `LEAGUE_SLUGS` | `lcs,msi,worlds` | Ligas a revisar |
+| `SYNC_INTERVAL` | `10m` | Intervalo normal (cada 1 min si hay partido en vivo) |
+| `LOLESPORTS_API_KEY` | llave pública | Cambiarla si la API responde 403 |
+| `LOLESPORTS_BASE_URL` | API real | Apuntar a un servidor falso al desarrollar |
+
+## Convenciones
+
+- Formato con `gofmt`. Comentarios en español.
+- Los tipos de la API van en inglés y reflejan el JSON. El modelo propio va en español (`Partido`, `Snapshot`, `Victorias`…).
+- `context.Context` siempre es el primer parámetro.
+- Errores envueltos con contexto: `fmt.Errorf("getSchedule: %w", err)`.
+- Nunca uses `http.DefaultClient`, porque no tiene timeout.
+- La lógica va en funciones puras para poder probarla. Por ejemplo, la hora actual entra como parámetro `now`.
+- Las pruebas viven junto al código y usan servidores falsos con `httptest`. Nunca le pegues a una API real en las pruebas.
+- Los textos de la interfaz van en español, con mayúscula solo al inicio.
+
+## Fuentes de datos y reglas
+
+**API de lolesports (fase 1)**
+- No es oficial: es la que usa lolesports.com, puede cambiar sin aviso y su llave pública se rota.
+- Base: `https://esports-api.lolesports.com/persisted/gw`, con el header `x-api-key`.
+- Endpoints que usamos: `getLeagues` y `getSchedule` (parámetros `leagueId`, `pageToken`, `hl=es-MX`).
+
+**API oficial de Riot (fase 2)**
+- `account-v1` convierte el Riot ID en PUUID, `league-v4` da rango y LP, y `match-v5` el historial.
+- Guarda el PUUID, no el nombre, porque los jugadores se lo cambian.
+- La llave de desarrollo expira cada 24 h, y un sitio público necesita llave de producción (Riot pide un prototipo funcionando).
+- La llave nunca va en el navegador ni en el repo: va en `.env`, que está en `.gitignore`.
+
+**Leaguepedia (fase 3)**
+- Usa la API Cargo, con las tablas `ScoreboardGames`, `ScoreboardPlayers` y `PicksAndBansS7`.
+- Hay que cachear y respetar sus límites de uso.
+
+**Legal**
+- Es una página de fans sin relación oficial con LYON, y el aviso de Riot va en el footer.
+- No recrees el logo de LYON: solo se usa el archivo oficial, con su permiso o según sus lineamientos.
+
+## Hoja de ruta
+
+1. **Fase 1 (actual):** calendario, partidos en vivo y resultados. Todo en memoria.
+2. **Fase 2:** soloQ.
+   - Cuentas de los jugadores editables, nunca fijas en el código, con la región de cada una (los pros juegan en KR durante los bootcamps).
+   - Postgres con `pgx` para el historial de LP.
+   - Limitador de peticiones con `golang.org/x/time/rate`.
+3. **Fase 3:** estadísticas por partida desde Leaguepedia.
+4. **Fase 4:**
+   - En vivo detallado con el feed de livestats de lolesports.
+   - Avisos.
+   - Despliegue como binario único en Fly.io o Railway.
+
+## Diseño
+
+Hay mockups en un canvas de Claude, privado para mí: https://claude.ai/artifact/4psKXJRqWPFwt5oVcVLKXP. Tú no puedes abrirlo, así que aquí va el resumen. Falta elegir la dirección:
+
+- **Índigo y dorado:** Barlow Condensed con Barlow. Es la que usa el CSS actual.
+- **Trofeo:** negro, dorado y blanco con Bodoni Moda y Work Sans. Editorial, centrada, con líneas doradas finas.
+- **Arena:** negro, dorado y blanco con Big Shoulders y Archivo. Franja dorada tipo transmisión y resultados como marcador de TV.
+- **Garra:** negro, dorado y blanco con Chakra Petch y Hanken Grotesk. Estilo HUD de esports con esquinas cortadas.
+
+Reglas que valen para cualquier dirección:
+- La victoria se marca con relleno dorado y la derrota con contorno, nunca solo con color.
+- Las fechas se muestran en la hora local del visitante.
+- Pensado primero para celular.
+- El nombre visible provisional es "La Manada" (a LYON le dicen The Pride); falta decidirlo.
+
+## Contexto del equipo (noviembre de 2026)
+
+- LYON ganó la LCS Spring 2026 (3–0 a Team Liquid en la final) y jugó el MSI. En verano perdió 1–3 contra Cloud9 la serie por el pase a Worlds.
+- Plantilla 2026: Dhokla (top), Inspired (jungla), Saint (medio), Berserker (tirador) e Isles (soporte). Puede cambiar en este offseason.
+- El calendario de la LCS 2027 todavía no se publica, así que es normal que "Siguiente partido" salga vacío.
+- `TEAM_CODE` y `LEAGUE_SLUGS` no se han verificado contra la API real. En la primera corrida, confírmalos con los logs: el programa lista los códigos y slugs que sí existen.
+
+## Comandos
+
+```powershell
+go run .                # levanta el sitio en http://localhost:8080
+go build ./...          # compila todos los paquetes
+go vet ./...            # busca errores comunes
+go test ./...           # corre todas las pruebas
+go test -count=1 ./...  # corre las pruebas sin usar la caché
+gofmt -l .              # lista archivos sin formatear
+```
