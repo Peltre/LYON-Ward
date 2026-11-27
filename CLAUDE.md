@@ -18,10 +18,11 @@ Página de fans (no oficial) que sigue a LYON, equipo de League of Legends en la
 
 Verifica siempre el estado real del repo: esta lista puede estar atrasada.
 
-- Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`, `internal/lolesports/client.go` y `client_test.go` (4 pruebas, todas pasan).
+- Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`, `client.go` y `client_test.go`; `internal/tracker/snapshot.go`, `snapshot_test.go`, `store.go` y `sync.go`. Todas las pruebas pasan.
 - Los demás archivos existen pero solo tienen su comentario y la cláusula `package`: están vacíos de lógica.
 - El template se llama `matches.html`, no `partidos.html`: los nombres de archivo van en inglés y solo el modelo propio va en español.
-- Sigue, en orden: `internal/tracker/snapshot.go` y `snapshot_test.go`, `internal/tracker/store.go`, `internal/tracker/sync.go`, `internal/web/server.go` con sus templates y CSS, `main.go` (reemplaza el hola mundo), `README.md` y `.gitignore`.
+- Los mockups aprobados (sitio general y partida en vivo en espejo) ya no están en el repo: Claude los guarda en su memoria del proyecto.
+- Sigue, en orden: `internal/web/server.go` con sus templates y CSS, `main.go` (reemplaza el hola mundo), `README.md` y `.gitignore`.
 
 Windows bloquea el binario que `go test` crea en `%TEMP%` (Smart App Control: "An Application Control policy has blocked this file"). Se arregla una vez por computadora con `go env -w GOTMPDIR=C:\Users\dakke\go\tmp`.
 
@@ -171,24 +172,54 @@ Respeta estos nombres para que todo encaje con lo que ya existe.
    - Avisos.
    - Despliegue como binario único en Fly.io o Railway.
 
-## Diseño
+## Marca y diseño
 
-Hay mockups en un canvas de Claude, privado para mí: https://claude.ai/artifact/4psKXJRqWPFwt5oVcVLKXP. Tú no puedes abrirlo, así que aquí va el resumen. Falta elegir la dirección:
+**Colores oficiales** (Brand Manual v1 de LYON, publicados en el Media Kit de lyon.gg):
 
-- **Índigo y dorado:** Barlow Condensed con Barlow. Es la que usa el CSS actual.
-- **Trofeo:** negro, dorado y blanco con Bodoni Moda y Work Sans. Editorial, centrada, con líneas doradas finas.
-- **Arena:** negro, dorado y blanco con Big Shoulders y Archivo. Franja dorada tipo transmisión y resultados como marcador de TV.
-- **Garra:** negro, dorado y blanco con Chakra Petch y Hanken Grotesk. Estilo HUD de esports con esquinas cortadas.
+| Variable | Hex | Para qué |
+|---|---|---|
+| `--lyon-oro` | `#B59A75` | Acento: botones, victorias, bordes destacados y enlace activo |
+| `--lyon-carbon` | `#1B1E25` | Fondo principal; también va en `<meta name="theme-color">` |
+| `--lyon-blanco` | `#F1F1F1` | Texto principal |
+| `--lyon-negro` | `#000000` | Franjas de máximo contraste y footer |
 
-Reglas que valen para cualquier dirección:
-- La victoria se marca con relleno dorado y la derrota con contorno, nunca solo con color.
+**Derivados** (nuestros, no oficiales):
+
+| Variable | Hex | Para qué |
+|---|---|---|
+| `--superficie` | `#252932` | Paneles |
+| `--linea` | `#2E333D` | Divisores |
+| `--tenue` | `#A7A9AF` | Texto secundario |
+
+**Contraste**
+- Oro sobre carbón: 6.3:1.
+- Blanco sobre carbón: ~15:1.
+- Carbón sobre oro: 6.3:1.
+- Nunca uses el oro como color de texto sobre fondos claros (2.4:1, no pasa).
+
+**Tipografía**
+- Títulos: Barlow Condensed 700 en MAYÚSCULAS, `letter-spacing: 0.02em`. Si te confirmo la fuente real de lyon.gg y está en Google Fonts, se cambia por esa.
+- Énfasis: en un título, UNA sola palabra en cursiva y color oro (ejemplo: "SIGUE A LA *MANADA*"). Máximo una por título.
+- Texto corrido: Barlow 400 y 500.
+- Cifras (marcadores, LP, récords): Barlow Condensed 700, grandes, con `font-variant-numeric: tabular-nums`.
+
+**Reglas**
+- Tema oscuro por defecto, con fondo carbón.
+- Victoria = relleno oro con texto carbón. Derrota = contorno blanco. Nunca solo color.
+- Logo: solo el isotipo oficial (versión para fondo oscuro, del Media Kit de lyon.gg), guardado en `internal/web/static/lyon-isotipo.png` y usado con `<img alt="LYON">`. No lo dibujes, no lo recrees en SVG y no lo modifiques.
+- No uses los lemas oficiales de LYON ("Join the family", "Nacidos para ganar") como si fueran nuestros: la página es de fans y no oficial. Usa frases propias.
+- El footer conserva el aviso legal de Riot y el de "página de fans sin relación oficial con LYON".
 - Las fechas se muestran en la hora local del visitante.
 - Pensado primero para celular.
 - El nombre visible provisional es "La Manada" (a LYON le dicen The Pride); falta decidirlo.
 
+Cuando lleguemos a `internal/web/static/styles.css`, estos colores se definen como variables en `:root` y todo lo demás los usa desde ahí. Explícame cómo funcionan las variables de CSS cuando toque escribirlo.
+
 ## Contexto del equipo (noviembre de 2026)
 
-- LYON ganó la LCS Spring 2026 (3–0 a Team Liquid en la final) y jugó el MSI. En verano perdió 1–3 contra Cloud9 la serie por el pase a Worlds.
+- LYON fue bicampeón de la LCS 2026: ganó el Lock-In y el Spring (3–0 a Team Liquid en la final).
+- Llegó a la semifinal del MSI 2026: cayó 2–3 ante Hanwha Life en la final de la llave de perdedores.
+- Jugó Worlds 2026.
 - Plantilla 2026: Dhokla (top), Inspired (jungla), Saint (medio), Berserker (tirador) e Isles (soporte). Puede cambiar en este offseason.
 - El calendario de la LCS 2027 todavía no se publica, así que es normal que "Siguiente partido" salga vacío.
 - `TEAM_CODE` y `LEAGUE_SLUGS` no se han verificado contra la API real. En la primera corrida, confírmalos con los logs: el programa lista los códigos y slugs que sí existen.
