@@ -1,1 +1,80 @@
 <!-- Complete web -->
+{{/*
+  index: el esqueleto de la página. El contenido de <main> lo pinta el
+  template "partidos" (matches.html), y htmx lo vuelve a pedir cada 60 s a
+  /partials/partidos para reemplazarlo sin recargar la página.
+  El punto (.) aquí es el tracker.Snapshot que manda server.go.
+*/}}
+{{define "index"}}<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#141312">
+<title>La Manada · LYON en vivo</title>
+<meta name="description" content="Página de fans no oficial de LYON: próximos partidos, partidos en vivo y resultados.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,700&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+<script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+</head>
+<body>
+
+<header class="barra">
+  <div class="contenedor barra__fila">
+    {{/* Aquí irá el isotipo oficial (static/lyon-isotipo.png) cuando lo tengamos. */}}
+    <a class="marca" href="/">
+      <span class="marca__texto">LA <span>MANADA</span></span>
+    </a>
+    <span class="barra__zona chico tenue">Tu hora: <span id="zona">local</span></span>
+  </div>
+</header>
+
+<main class="contenedor" hx-get="/partials/partidos" hx-trigger="every 60s" hx-swap="innerHTML">
+  {{template "partidos" .}}
+</main>
+
+<footer class="pie">
+  <div class="contenedor">
+    <p>La Manada es una página de fans sin relación oficial con LYON.</p>
+    <p>La Manada no está respaldada por Riot Games y no refleja los puntos de vista ni las opiniones de Riot Games ni de nadie que participe oficialmente en la producción o gestión de las propiedades de Riot Games. Riot Games y todas las propiedades asociadas son marcas comerciales o marcas registradas de Riot Games, Inc.</p>
+  </div>
+</footer>
+
+<script>
+// El servidor manda cada fecha en UTC dentro de <time datetime="...">, con un
+// texto de respaldo. Este script la reescribe en la hora de quien mira.
+var FORMATOS = {
+  largo: { weekday: 'short', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' },
+  corto: { day: 'numeric', month: 'short' },
+  hora:  { hour: 'numeric', minute: '2-digit' }
+};
+
+function pintarHoras(raiz) {
+  (raiz || document).querySelectorAll('time[data-local]').forEach(function (t) {
+    var fecha = new Date(t.getAttribute('datetime'));
+    if (isNaN(fecha)) return;
+    var formato = FORMATOS[t.dataset.local] || FORMATOS.corto;
+    t.textContent = fecha.toLocaleString('es-MX', formato);
+  });
+}
+
+pintarHoras();
+
+// Cada vez que htmx reemplaza el contenido, llegan fechas nuevas en UTC.
+document.body.addEventListener('htmx:afterSwap', function (e) {
+  pintarHoras(e.target);
+});
+
+try {
+  document.getElementById('zona').textContent =
+    Intl.DateTimeFormat().resolvedOptions().timeZone;
+} catch (err) {
+  // Navegadores viejos: se queda "local".
+}
+</script>
+
+</body>
+</html>
+{{end}}

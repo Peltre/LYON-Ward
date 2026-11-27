@@ -18,11 +18,11 @@ Página de fans (no oficial) que sigue a LYON, equipo de League of Legends en la
 
 Verifica siempre el estado real del repo: esta lista puede estar atrasada.
 
-- Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`, `client.go` y `client_test.go`; `internal/tracker/snapshot.go`, `snapshot_test.go`, `store.go` y `sync.go`; `internal/web/server.go`. Todas las pruebas pasan.
+- Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`, `client.go` y `client_test.go`; `internal/tracker/snapshot.go`, `snapshot_test.go`, `store.go` y `sync.go`; `internal/web/server.go`, `templates/index.html` y `templates/matches.html` (define `partidos` y el auxiliar `escudo`); `static/styles.css`; `main.go`. `go run .` ya levanta el sitio con datos reales. Todas las pruebas pasan.
 - Los demás archivos existen pero solo tienen su comentario y la cláusula `package`: están vacíos de lógica.
 - El template se llama `matches.html`, no `partidos.html`: los nombres de archivo van en inglés y solo el modelo propio va en español.
 - Los mockups aprobados (sitio general y partida en vivo en espejo) ya no están en el repo: Claude los guarda en su memoria del proyecto.
-- Sigue, en orden: los templates `index.html` y `matches.html` (deben definir `index` y `partidos`: `web.New` falla al arrancar si falta alguno), `static/styles.css`, `main.go` (reemplaza el hola mundo), `README.md` y `.gitignore`.
+- Sigue, en orden: `README.md` y `.gitignore`.
 
 Windows bloquea el binario que `go test` crea en `%TEMP%` (Smart App Control: "An Application Control policy has blocked this file"). Se arregla una vez por computadora con `go env -w GOTMPDIR=C:\Users\dakke\go\tmp`.
 
@@ -179,7 +179,7 @@ Respeta estos nombres para que todo encaje con lo que ya existe.
 | Variable | Hex | Para qué |
 |---|---|---|
 | `--lyon-oro` | `#B59A75` | Acento: botones, victorias, bordes destacados y enlace activo |
-| `--lyon-carbon` | `#1B1E25` | Fondo principal; también va en `<meta name="theme-color">` |
+| `--lyon-carbon` | `#1B1E25` | Oficial, pero NO lo usamos de fondo: Pedro eligió el carbón cálido más oscuro (ver derivados) |
 | `--lyon-blanco` | `#F1F1F1` | Texto principal |
 | `--lyon-negro` | `#000000` | Franjas de máximo contraste y footer |
 
@@ -187,14 +187,19 @@ Respeta estos nombres para que todo encaje con lo que ya existe.
 
 | Variable | Hex | Para qué |
 |---|---|---|
-| `--superficie` | `#252932` | Paneles |
-| `--linea` | `#2E333D` | Divisores |
-| `--tenue` | `#A7A9AF` | Texto secundario |
+| `--carbon` | `#141312` | Fondo principal; también va en `<meta name="theme-color">` |
+| `--superficie` | `#1C1A18` | Paneles |
+| `--alta` | `#24211E` | Cajas dentro de un panel |
+| `--linea` | `#2F2B27` | Divisores |
+| `--tenue` | `#A09A92` | Texto secundario |
+
+Los grises son neutros cálidos (con una pizca de marrón) para que combinen con el oro.
 
 **Contraste**
-- Oro sobre carbón: 6.3:1.
-- Blanco sobre carbón: ~15:1.
-- Carbón sobre oro: 6.3:1.
+- Oro sobre carbón: 6.9:1.
+- Blanco sobre carbón: ~16:1.
+- Carbón sobre oro: 6.9:1.
+- Tenue sobre carbón: 6.7:1; sobre superficie: 6.2:1.
 - Nunca uses el oro como color de texto sobre fondos claros (2.4:1, no pasa).
 
 **Tipografía**
@@ -222,7 +227,7 @@ Cuando lleguemos a `internal/web/static/styles.css`, estos colores se definen co
 - Jugó Worlds 2026.
 - Plantilla 2026: Dhokla (top), Inspired (jungla), Saint (medio), Berserker (tirador) e Isles (soporte). Puede cambiar en este offseason.
 - El calendario de la LCS 2027 todavía no se publica, así que es normal que "Siguiente partido" salga vacío.
-- `TEAM_CODE` y `LEAGUE_SLUGS` no se han verificado contra la API real. En la primera corrida, confírmalos con los logs: el programa lista los códigos y slugs que sí existen.
+- `TEAM_CODE=LYON` y `LEAGUE_SLUGS=lcs,msi,worlds` quedaron verificados contra la API real el 26 de noviembre de 2026: 398 eventos, 39 resultados de LYON (27–12). Si algún día dejan de encontrarse, los logs listan los códigos y slugs que sí existen.
 
 ## Comandos
 

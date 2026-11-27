@@ -1,0 +1,210 @@
+/* ============================================================
+   La Manada: estilos del sitio.
+   Pensado primero para celular: las reglas de arriba son para
+   pantallas chicas y los @media (min-width) del final agregan
+   lo que cambia cuando hay más espacio.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. Variables
+   Todos los colores viven aquí. El resto del archivo nunca
+   escribe un hex: siempre usa var(--nombre).
+   ------------------------------------------------------------ */
+:root {
+  /* Oficiales de LYON (Brand Manual v1) */
+  --lyon-oro: #B59A75;
+  --lyon-blanco: #F1F1F1;
+  --lyon-negro: #000000;
+
+  /* Nuestros: grises cálidos que combinan con el oro */
+  --carbon: #141312;      /* fondo */
+  --superficie: #1C1A18;  /* paneles */
+  --alta: #24211E;        /* cajas dentro de un panel */
+  --linea: #2F2B27;       /* divisores */
+  --tenue: #A09A92;       /* texto secundario */
+  --oro-claro: #D2BB97;   /* solo para hover */
+  --error: #E0866F;
+
+  /* Medidas y tipografía */
+  --ancho-max: 1180px;
+  --radio: 10px;
+  --titulo: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --texto: 'Barlow', system-ui, sans-serif;
+}
+
+/* ------------------------------------------------------------
+   2. Base
+   ------------------------------------------------------------ */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--carbon);
+  color: var(--lyon-blanco);
+  font-family: var(--texto);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1, h2 {
+  font-family: var(--titulo);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+h1 { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+h2 { font-size: 22px; letter-spacing: 0.06em; }
+
+a { color: var(--lyon-oro); text-decoration: none; }
+a:hover { color: var(--oro-claro); }
+
+/* Una sola palabra por título, en cursiva y oro */
+.destacado { font-style: italic; color: var(--lyon-oro); }
+
+.contenedor { max-width: var(--ancho-max); margin: 0 auto; padding: 0 16px; }
+.cifra { font-family: var(--titulo); font-weight: 700; font-variant-numeric: tabular-nums; }
+.tenue { color: var(--tenue); }
+.oro { color: var(--lyon-oro); }
+.chico { font-size: 12px; }
+.crece { flex-grow: 1; }
+.fila { display: flex; align-items: center; gap: 12px; }
+
+/* Oculto a la vista pero lo leen los lectores de pantalla */
+.oculto {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   3. Barra superior
+   ------------------------------------------------------------ */
+.barra {
+  background: var(--lyon-negro);
+  border-bottom: 1px solid var(--linea);
+  position: sticky; top: 0; z-index: 10;
+}
+.barra__fila { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; }
+.marca { display: flex; align-items: center; gap: 12px; color: var(--lyon-blanco); }
+.marca:hover { color: var(--lyon-blanco); }
+.marca__texto { font-family: var(--titulo); font-weight: 700; font-size: 22px; letter-spacing: 0.04em; line-height: 1; }
+.marca__texto span { color: var(--lyon-oro); }
+
+/* ------------------------------------------------------------
+   4. Secciones y paneles
+   ------------------------------------------------------------ */
+.seccion { padding: 26px 0; }
+.seccion__cabeza { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; margin-bottom: 16px; }
+.seccion__cabeza h2 { flex-grow: 1; }
+
+.panel { background: var(--superficie); border-radius: var(--radio); padding: 18px; }
+.panel--acento { border: 1px solid var(--lyon-oro); }
+
+/* ------------------------------------------------------------
+   5. En vivo
+   ------------------------------------------------------------ */
+.vivo {
+  display: inline-flex; align-items: center; gap: 7px; vertical-align: middle;
+  background: var(--lyon-oro); color: var(--lyon-negro);
+  padding: 4px 11px; border-radius: 3px;
+  font-family: var(--titulo); font-weight: 700; font-size: 13px; letter-spacing: 0.1em;
+}
+.vivo__punto {
+  width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+  animation: late 1.4s infinite;
+}
+@keyframes late { 50% { opacity: 0.25; } }
+
+/* Quien prefiere menos movimiento no ve el parpadeo */
+@media (prefers-reduced-motion: reduce) {
+  .vivo__punto { animation: none; }
+}
+
+/* Los dos equipos frente a frente; el derecho es el espejo */
+.duelo { display: flex; align-items: center; gap: 12px; }
+.duelo__lado { flex: 1 1 0; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.duelo__lado--der { justify-content: flex-end; text-align: right; }
+.duelo__nombre { font-family: var(--titulo); font-weight: 700; font-size: 20px; line-height: 1.05; }
+
+.marcador {
+  font-family: var(--titulo); font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 40px; line-height: 0.9; white-space: nowrap;
+}
+.marcador__sep { color: var(--linea); margin: 0 8px; }
+
+/* ------------------------------------------------------------
+   6. Próximos partidos
+   ------------------------------------------------------------ */
+.proximos { display: flex; flex-wrap: wrap; gap: 12px; }
+.proxima {
+  flex: 1 1 240px;
+  background: var(--superficie); border: 1px solid transparent; border-radius: var(--radio);
+  padding: 18px;
+}
+.proxima--primera { background: var(--alta); border-color: var(--lyon-oro); }
+.proxima__cuando { font-size: 13px; color: var(--lyon-oro); margin-bottom: 12px; }
+.proxima__cuando time::first-letter { text-transform: uppercase; }
+.proxima__duelo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.proxima__pie {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding-top: 12px; border-top: 1px solid var(--linea);
+  font-size: 12px; color: var(--tenue);
+}
+
+/* ------------------------------------------------------------
+   7. Escudos de los rivales
+   ------------------------------------------------------------ */
+.escudo { width: 32px; height: 32px; flex-shrink: 0; object-fit: contain; }
+.escudo--texto {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--linea); border-radius: 4px; background: var(--alta);
+  font-family: var(--titulo); font-weight: 700; font-size: 11px; color: var(--tenue);
+}
+
+/* ------------------------------------------------------------
+   8. Resultados
+   ------------------------------------------------------------ */
+.tabla { width: 100%; border-collapse: collapse; background: var(--superficie); border-radius: var(--radio); overflow: hidden; }
+.tabla th {
+  text-align: left; font-weight: 500; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--tenue); background: var(--lyon-negro); padding: 10px 8px;
+}
+.tabla td { padding: 10px 8px; border-bottom: 1px solid var(--linea); vertical-align: middle; }
+.tabla tr:last-child td { border-bottom: 0; }
+.tabla th:first-child, .tabla td:first-child { padding-left: 14px; }
+.tabla .cen { text-align: center; }
+.tabla td.cifra { font-size: 20px; }
+.tabla .ocultable { display: none; }
+.tabla__nombre { font-family: var(--titulo); font-weight: 600; font-size: 18px; line-height: 1.1; }
+
+/* Victoria rellena, derrota de contorno: nunca solo el color */
+.sello {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 3px;
+  font-family: var(--titulo); font-weight: 700; font-size: 13px;
+}
+.sello--v { background: var(--lyon-oro); color: var(--carbon); }
+.sello--d { border: 1px solid var(--lyon-blanco); color: var(--lyon-blanco); }
+
+/* ------------------------------------------------------------
+   9. Estado y pie
+   ------------------------------------------------------------ */
+.estado { padding: 8px 0 24px; margin: 0; }
+.estado__error { color: var(--error); }
+
+.pie { background: var(--lyon-negro); border-top: 1px solid var(--linea); padding: 24px 0; font-size: 12px; color: var(--tenue); }
+.pie p { margin: 0 0 8px; max-width: 880px; }
+
+/* ------------------------------------------------------------
+   10. Pantallas medianas y grandes
+   ------------------------------------------------------------ */
+@media (min-width: 720px) {
+  .contenedor { padding: 0 24px; }
+  h1 { font-size: 46px; }
+  .seccion { padding: 36px 0; }
+  .panel { padding: 24px; }
+  .duelo { gap: 24px; }
+  .duelo__nombre { font-size: 30px; }
+  .marcador { font-size: 58px; }
+  .proxima--primera { flex: 1.4 1 320px; }
+  .tabla .ocultable { display: table-cell; }
+}

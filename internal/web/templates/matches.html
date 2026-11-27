@@ -1,1 +1,150 @@
 <!-- Auto refreshed block with match history -->
+{{/*
+  partidos: el contenido de <main>. Se pinta dentro de index en la primera
+  visita y solo, sin layout, cuando htmx pide /partials/partidos.
+  El punto (.) es un tracker.Snapshot. Dentro de range/with el punto cambia
+  al elemento actual; para volver al Snapshot se usa $.
+*/}}
+{{define "partidos"}}
+{{if not .HayDatos}}
+  <section class="seccion">
+    <h1>SIGUE A LA <span class="destacado">MANADA</span></h1>
+    <p class="tenue">Estamos trayendo los partidos de LYON. Esta sección se actualiza sola en un momento.</p>
+  </section>
+{{else}}
+
+  {{/* ---------- En vivo ---------- */}}
+  {{range .EnVivo}}
+  <section class="seccion">
+    <div class="seccion__cabeza">
+      <h2><span class="vivo"><span class="vivo__punto"></span>EN VIVO</span></h2>
+      <span class="chico tenue">{{.Liga}}{{with .Bloque}} · {{.}}{{end}}{{with .Formato}} · {{.}}{{end}}</span>
+    </div>
+    <div class="panel panel--acento duelo">
+      <div class="duelo__lado">
+        <span class="duelo__nombre">{{.Nuestro.Nombre}}</span>
+      </div>
+      <div class="marcador">
+        <span class="oro">{{.Nuestro.Juegos}}</span><span class="marcador__sep">·</span>{{.Rival.Juegos}}
+      </div>
+      <div class="duelo__lado duelo__lado--der">
+        {{template "escudo" .Rival}}
+        <span class="duelo__nombre tenue">{{.Rival.Nombre}}</span>
+      </div>
+    </div>
+  </section>
+  {{end}}
+
+  {{/* ---------- Siguiente partido ---------- */}}
+  <section class="seccion">
+    <div class="seccion__cabeza"><h2>SIGUIENTE <span class="destacado">PARTIDO</span></h2></div>
+    {{with .Proximo}}
+    <div class="proxima proxima--primera">
+      <div class="proxima__cuando">
+        <time datetime="{{iso .Inicio}}" data-local="largo">{{fechaUTC .Inicio}}</time>
+      </div>
+      <div class="proxima__duelo">
+        <span class="tabla__nombre">{{.Nuestro.Codigo}}</span>
+        <span class="crece chico tenue">vs</span>
+        <span class="tabla__nombre tenue">{{.Rival.Nombre}}</span>
+        {{template "escudo" .Rival}}
+      </div>
+      <div class="proxima__pie">
+        <span>{{.Liga}}{{with .Bloque}} · {{.}}{{end}}</span>
+        <span>{{.Formato}}</span>
+      </div>
+    </div>
+    {{else}}
+    <p class="tenue">Todavía no hay partido agendado. En cuanto se publique el calendario, aparece aquí.</p>
+    {{end}}
+  </section>
+
+  {{/* ---------- Después ---------- */}}
+  {{with .Despues}}
+  <section class="seccion">
+    <div class="seccion__cabeza"><h2>DESPUÉS</h2></div>
+    <div class="proximos">
+      {{range .}}
+      <div class="proxima">
+        <div class="proxima__cuando tenue">
+          <time datetime="{{iso .Inicio}}" data-local="largo">{{fechaUTC .Inicio}}</time>
+        </div>
+        <div class="proxima__duelo">
+          <span class="tabla__nombre">{{.Nuestro.Codigo}}</span>
+          <span class="crece chico tenue">vs</span>
+          <span class="tabla__nombre tenue">{{.Rival.Codigo}}</span>
+          {{template "escudo" .Rival}}
+        </div>
+        <div class="proxima__pie">
+          <span>{{.Liga}}{{with .Bloque}} · {{.}}{{end}}</span>
+          <span>{{.Formato}}</span>
+        </div>
+      </div>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+
+  {{/* ---------- Resultados ---------- */}}
+  <section class="seccion">
+    <div class="seccion__cabeza">
+      <h2>RESULTADOS</h2>
+      <span class="cifra">
+        <span class="oro">{{.Victorias}}</span> {{plural .Victorias "victoria" "victorias"}}
+        · {{.Derrotas}} {{plural .Derrotas "derrota" "derrotas"}}
+      </span>
+    </div>
+    {{with .Resultados}}
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th><span class="oculto">Resultado</span></th>
+          <th>Fecha</th>
+          <th>Rival</th>
+          <th class="ocultable">Torneo</th>
+          <th class="cen">Marcador</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .}}
+        <tr>
+          <td>
+            {{if .Ganamos}}<span class="sello sello--v" title="Victoria">V</span>
+            {{else}}<span class="sello sello--d" title="Derrota">D</span>{{end}}
+          </td>
+          <td class="tenue chico"><time datetime="{{iso .Inicio}}" data-local="corto">{{fechaUTC .Inicio}}</time></td>
+          <td>
+            <div class="fila">
+              {{template "escudo" .Rival}}
+              <span class="tabla__nombre">{{.Rival.Nombre}}</span>
+            </div>
+          </td>
+          <td class="tenue chico ocultable">{{.Liga}}{{with .Bloque}} · {{.}}{{end}}</td>
+          <td class="cen cifra">{{.Nuestro.Juegos}}–{{.Rival.Juegos}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="tenue">Aún no hay resultados en las ligas que seguimos.</p>
+    {{end}}
+  </section>
+
+{{end}}
+
+  {{/* ---------- Estado ---------- */}}
+  <p class="estado chico tenue">
+    {{with .Error}}<span class="estado__error">{{.}}</span> ·{{end}}
+    {{if .HayDatos}}Última actualización: <time datetime="{{iso .Actualizado}}" data-local="hora">{{fechaUTC .Actualizado}}</time>{{end}}
+  </p>
+{{end}}
+
+{{/*
+  escudo: el logo de un equipo que manda la API, o su código si no hay
+  imagen. El punto es un tracker.Equipo. El de LYON no se usa aquí: el
+  oficial va como archivo propio en static/.
+*/}}
+{{define "escudo"}}
+  {{if .Imagen}}<img class="escudo" src="{{.Imagen}}" alt="{{.Nombre}}" width="32" height="32" loading="lazy">
+  {{else}}<span class="escudo escudo--texto">{{.Codigo}}</span>{{end}}
+{{end}}
