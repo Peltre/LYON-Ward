@@ -19,10 +19,9 @@ Página de fans (no oficial) que sigue a LYON, equipo de League of Legends en la
 Verifica siempre el estado real del repo: esta lista puede estar atrasada.
 
 - Hecho: `go.mod` (`module github.com/Peltre/LYONWard`), `internal/lolesports/types.go`, `client.go` y `client_test.go`; `internal/tracker/snapshot.go`, `snapshot_test.go`, `store.go` y `sync.go`; `internal/web/server.go`, `templates/index.html` y `templates/matches.html` (define `partidos` y el auxiliar `escudo`); `static/styles.css`; `main.go`. `go run .` ya levanta el sitio con datos reales. Todas las pruebas pasan.
-- Los demás archivos existen pero solo tienen su comentario y la cláusula `package`: están vacíos de lógica.
 - El template se llama `matches.html`, no `partidos.html`: los nombres de archivo van en inglés y solo el modelo propio va en español.
 - Los mockups aprobados (sitio general y partida en vivo en espejo) ya no están en el repo: Claude los guarda en su memoria del proyecto.
-- Sigue, en orden: `README.md` y `.gitignore`.
+- **Fase 1 terminada** el 26 de noviembre de 2026 (`README.md` y `.gitignore` incluidos). Sigue la fase 2 (soloQ): antes de empezar, definir con Pedro cómo se guardan las cuentas editables y pedir permiso para las dependencias (`pgx`, `x/time/rate`).
 
 Windows bloquea el binario que `go test` crea en `%TEMP%` (Smart App Control: "An Application Control policy has blocked this file"). Se arregla una vez por computadora con `go env -w GOTMPDIR=C:\Users\dakke\go\tmp`.
 
@@ -161,8 +160,8 @@ Respeta estos nombres para que todo encaje con lo que ya existe.
 
 ## Hoja de ruta
 
-1. **Fase 1 (actual):** calendario, partidos en vivo y resultados. Todo en memoria.
-2. **Fase 2:** soloQ.
+1. **Fase 1 (terminada):** calendario, partidos en vivo y resultados. Todo en memoria.
+2. **Fase 2 (siguiente):** soloQ.
    - Cuentas de los jugadores editables, nunca fijas en el código, con la región de cada una (los pros juegan en KR durante los bootcamps).
    - Postgres con `pgx` para el historial de LP.
    - Limitador de peticiones con `golang.org/x/time/rate`.

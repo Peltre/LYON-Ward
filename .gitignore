@@ -23,3 +23,18 @@ go.work.sum
 
 # env file
 .env
+
+# Binario de "go build" en Linux y macOS (en Windows ya lo cubre *.exe)
+/LYONWard
+
+# Variables locales: llaves de Riot y otras. Nunca van al repo.
+.env.*
+!.env.example
+
+# Configuración personal de Claude Code (la compartida sí se sube)
+.claude/settings.local.json
+
+# Sistema operativo y editor
+.DS_Store
+Thumbs.db
+.vscode/
