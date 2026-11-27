@@ -1,10 +1,9 @@
-# La Manada
-
+# LYON Ward
 Página de fans **no oficial** de LYON, equipo de League of Legends en la LCS. Muestra los partidos en vivo, el siguiente partido, el calendario y los resultados con el récord del equipo.
 
 Está hecha en Go con la librería estándar: el HTML se arma en el servidor con `html/template` y [htmx](https://htmx.org) lo refresca cada minuto. El navegador nunca llama a APIs externas.
 
-> La Manada es una página de fans sin relación oficial con LYON. No está respaldada por Riot Games y no refleja los puntos de vista ni las opiniones de Riot Games ni de nadie que participe oficialmente en la producción o gestión de las propiedades de Riot Games. Riot Games y todas las propiedades asociadas son marcas comerciales o marcas registradas de Riot Games, Inc.
+> LW es una página de fans sin relación oficial con LYON. No está respaldada por Riot Games y no refleja los puntos de vista ni las opiniones de Riot Games ni de nadie que participe oficialmente en la producción o gestión de las propiedades de Riot Games. Riot Games y todas las propiedades asociadas son marcas comerciales o marcas registradas de Riot Games, Inc.
 
 ## Cómo correrla
 
